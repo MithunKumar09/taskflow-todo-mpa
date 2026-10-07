@@ -200,6 +200,17 @@ describe('HTTP and PostgreSQL contracts', () => {
 });
 
 describe('list queries', () => {
+  it.each([
+    ['%', '100% ready'],
+    ['_', 'under_score'],
+    ['\\', 'slash\\path'],
+  ])('searches %s as a literal character', async (q, title) => {
+    await database.todo.create({ data: { title } });
+    const response = await app.inject(`/api/v1/todos?q=${encodeURIComponent(q)}`);
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data.map((todo: { title: string }) => todo.title)).toEqual([title]);
+    expect(response.json().meta.total).toBe(1);
+  });
   beforeEach(async () => {
     await database.todo.createMany({
       data: [

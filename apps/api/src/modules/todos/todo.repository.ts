@@ -26,7 +26,9 @@ export function createTodoRepository(database: PrismaClient) {
     },
     async list(query: ListTodosInput) {
       const where: Prisma.TodoWhereInput = {
-        ...(query.q ? { title: { contains: query.q, mode: 'insensitive' } } : {}),
+        ...(query.q
+          ? { title: { contains: query.q.replace(/[\\%_]/g, '\\$&'), mode: 'insensitive' } }
+          : {}),
         ...(query.status ? { status: query.status } : {}),
         ...(query.priority ? { priority: query.priority } : {}),
       };

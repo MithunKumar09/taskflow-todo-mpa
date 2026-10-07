@@ -59,6 +59,8 @@ Content-Type: application/json
 
 Filters combine with AND. Unknown fields, malformed pagination, and excessive/unsafe offsets are rejected. Due dates sort ascending with nulls last; priority sorts HIGH → MEDIUM → LOW. Every sort has stable UUID tie-breaking.
 
+Search is literal substring matching: `%`, `_`, and backslash match those characters in titles. SQL wildcard characters are escaped before the parameterized Prisma query.
+
 ```http
 GET /api/v1/todos?q=review&status=PENDING&priority=HIGH&sort=dueAt&page=1&limit=20
 ```

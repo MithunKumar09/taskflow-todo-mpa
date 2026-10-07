@@ -84,7 +84,7 @@ On Windows with Node 24.21.0 and Docker PostgreSQL 17:
 | Check                                | Result                                               |
 | ------------------------------------ | ---------------------------------------------------- |
 | Unit                                 | 42 passed                                            |
-| PostgreSQL integration               | 39 passed                                            |
+| PostgreSQL integration               | 42 passed                                            |
 | Functional Chromium                  | 18 passed, no retries                                |
 | Postman                              | 15 requests, 45 assertions passed                    |
 | Lint, strict type checking, build    | Passed                                               |
