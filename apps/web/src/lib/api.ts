@@ -1,5 +1,10 @@
 import type { Todo, TodoInput, TodoPatch } from '../types/todo';
 
+export function resolveApiUrl(path: string, baseUrl = import.meta.env.VITE_API_BASE_URL): string {
+  const origin = (baseUrl ?? '').trim().replace(/\/+$/, '');
+  return `${origin}${path}`;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -23,7 +28,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   }, 15000);
   const mutation = options.method && options.method !== 'GET';
   try {
-    const response = await fetch(path, {
+    const response = await fetch(resolveApiUrl(path), {
       ...options,
       headers: {
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),

@@ -53,6 +53,8 @@ Open **http://localhost:5173**. The API listens on **http://127.0.0.1:3000**. Vi
 | `DATABASE_URL`      | Development PostgreSQL connection                          |
 | `TEST_DATABASE_URL` | Separate disposable database ending in _test               |
 
+When the frontend and API are hosted separately, set `VITE_API_BASE_URL=https://<api-host>` in the frontend's build environment, then rebuild/redeploy the static site. Local development and tests can omit it or leave it empty to keep relative `/api` requests. The Vite configuration reads this public setting from the process environment first, then the root `.env`. All `VITE_*` values are client-visible: never use them for database URLs/passwords, API secrets, private tokens, or keys.
+
 Compose binds PostgreSQL to loopback ports **55432** (development) and **55433** (test). Local example credentials are development-only. Development uses a named volume; test data is temporary. `docker compose down` preserves the development volume. Reapply test migrations after recreating the test container.
 
 For a compiled local run:
