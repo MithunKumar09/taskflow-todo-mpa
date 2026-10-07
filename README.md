@@ -17,6 +17,8 @@ A focused Todo application with a genuine React/Vite multi-page frontend and a F
 
 Captured from the running application with demo data:
 
+[Watch/download the 5:41 captioned walkthrough](docs/assets/taskflow-walkthrough.webm). It shows actual UI/MPA behavior, real Postman output, captured verification results, migrations, documentation, and green CI. Captions provide the explanation; the recording has no voice narration.
+
 ![TaskFlow desktop list](docs/assets/todo-list-desktop.png)
 
 [Mobile list](docs/assets/todo-list-mobile.png) · [Todo detail](docs/assets/todo-detail-desktop.png) · [Create dialog](docs/assets/create-dialog.png)

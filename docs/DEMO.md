@@ -1,5 +1,7 @@
 # Reviewer demo — 5–7 minutes
 
+[Recorded walkthrough — 5:41](assets/taskflow-walkthrough.webm), 1280×800 WebM, with explanatory captions and no voice narration. The recording uses the actual running application, a real Postman run, captured clean-checkout test output, committed documents/migration, and the successful CI run for application commit 43476a5. The subsequent documentation commit publishes this artifact without changing application behavior.
+
 Prepare the app and verification output before recording. Use actual running application content; optionally seed demo tasks.
 
 | Time      | Demonstration                                                                                   |
