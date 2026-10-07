@@ -1,0 +1,458 @@
+{
+  "info": {
+    "name": "TaskFlow API",
+    "description": "Run in order against a migrated local API. Creates a uniquely named todo, verifies its lifecycle, and deletes only that record. Other records are preserved. Uses collection variables so the exported environment contains no secrets.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.info.requestName === \"Health\") pm.collectionVariables.set(\"runId\", String(Date.now()));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "todoId",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Database ready\", function () { pm.expect(pm.response.json()).to.eql({status:\"ok\"}); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create todo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"TaskFlow Postman {{runId}}\",\n  \"description\": \" API lifecycle verification \",\n  \"priority\": \"HIGH\",\n  \"dueAt\": \"2026-10-20T10:00:00Z\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "const todo = pm.response.json().data; pm.collectionVariables.set(\"todoId\", todo.id);",
+              "pm.test(\"Create defaults and normalization\", function () { pm.expect(todo.status).to.equal(\"PENDING\"); pm.expect(todo.completedAt).to.equal(null); pm.expect(todo.description).to.equal(\"API lifecycle verification\"); pm.expect(todo.id).to.match(/^[0-9a-f-]{36}$/); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search with status and priority",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/todos?q={{runId}}&status=PENDING&priority=HIGH&sort=dueAt&page=1&limit=5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Combined filters and pagination\", function () { const b = pm.response.json(); pm.expect(b.data).to.have.lengthOf(1); pm.expect(b.data[0].id).to.equal(pm.collectionVariables.get(\"todoId\")); pm.expect(b.meta).to.eql({page:1,limit:5,total:1,totalPages:1}); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get detail",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Read created record\", function () { pm.expect(pm.response.json().data.id).to.equal(pm.collectionVariables.get(\"todoId\")); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Complete todo",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"COMPLETED\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "const todo = pm.response.json().data; pm.collectionVariables.set(\"completedAt\", todo.completedAt); pm.test(\"Completion timestamp\", function () { pm.expect(todo.status).to.equal(\"COMPLETED\"); pm.expect(todo.completedAt).to.be.a(\"string\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unrelated edit preserves completion",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Completion preserved; description cleared\", function () { const t=pm.response.json().data; pm.expect(t.completedAt).to.equal(pm.collectionVariables.get(\"completedAt\")); pm.expect(t.description).to.equal(null); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reopen todo",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Reopening clears completion\", function () { const t=pm.response.json().data; pm.expect(t.status).to.equal(\"IN_PROGRESS\"); pm.expect(t.completedAt).to.equal(null); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject empty patch",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject invalid date",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dueAt\": \"not-a-date\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject blank title",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"   \"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject unknown field",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/todos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Invalid\",\n  \"createdAt\": \"2026-10-07T00:00:00Z\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reject malformed UUID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/todos/not-a-uuid"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete todo",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Empty response body\", function () { pm.expect(pm.response.text()).to.equal(\"\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Deleted todo returns 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/todos/{{todoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unknown valid UUID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/todos/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"Request correlation\", function () { pm.expect(pm.response.headers.get(\"x-request-id\")).to.be.a(\"string\"); });",
+              "pm.test(\"Safe error envelope\", function () { const e = pm.response.json().error; pm.expect(e.code).to.be.a(\"string\"); pm.expect(e.requestId).to.equal(pm.response.headers.get(\"x-request-id\")); pm.expect(e).not.to.have.property(\"stack\"); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

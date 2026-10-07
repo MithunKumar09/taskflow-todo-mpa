@@ -1,0 +1,69 @@
+{
+  "name": "taskflow-todo-mpa",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "start": "npm run start -w apps/api",
+    "preview": "npm run preview -w apps/web",
+    "build": "npm run build --workspaces",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json && npm run typecheck --workspaces",
+    "env:check": "tsx scripts/env-check.ts",
+    "db:validate": "prisma validate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:test:deploy": "tsx scripts/test-database.ts",
+    "db:seed": "prisma db seed",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run --config apps/api/vitest.config.ts --project unit",
+    "test:integration": "tsx scripts/test-integration.ts",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:ui": "playwright test --project=chromium --ui",
+    "test:e2e:visual": "playwright test --project=chromium-visual",
+    "test:e2e:update": "playwright test --project=chromium-visual --update-snapshots",
+    "postman:test": "newman run postman/TaskFlow.postman_collection.json -e postman/Local.postman_environment.json"
+  },
+  "overrides": {
+    "shell-quote": "1.12.0",
+    "lodash": "4.18.1",
+    "mysql2": "3.24.5",
+    "deepmerge-ts": "8.0.2",
+    "handlebars": "4.7.10",
+    "node-forge": "1.4.0",
+    "underscore": "1.13.8",
+    "flatted": "3.4.4",
+    "jose": "4.15.9",
+    "qs": "6.16.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^16.5.0",
+    "newman": "^6.2.1",
+    "prettier": "^3.6.2",
+    "prisma": "^7.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.3",
+    "vitest": "^4.1.0"
+  }
+}

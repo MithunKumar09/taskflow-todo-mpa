@@ -1,0 +1,21 @@
+{
+  "name": "@taskflow/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host localhost --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host localhost --port 5173 --strictPort",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "@vitejs/plugin-react": "^6.0.0",
+    "vite": "^8.1.0"
+  }
+}
