@@ -12,6 +12,7 @@ export async function registerSecurity(
   await app.register(helmet);
   await app.register(cors, {
     origin: env.WEB_ORIGIN,
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: false,
     exposedHeaders: ['x-request-id'],
   });
