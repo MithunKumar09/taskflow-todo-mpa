@@ -28,7 +28,10 @@ async function main() {
   process.once('SIGINT', () => void shutdown('SIGINT'));
   process.once('SIGTERM', () => void shutdown('SIGTERM'));
   try {
-    await app.listen({ port: env.API_PORT, host: '127.0.0.1' });
+    await app.listen({
+      port: env.API_PORT,
+      host: env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1',
+    });
   } catch (error) {
     app.log.fatal({ err: error }, 'Startup failed');
     await app.close();
